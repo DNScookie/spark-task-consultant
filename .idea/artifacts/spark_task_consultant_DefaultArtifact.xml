@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="spark-task-consultant_DefaultArtifact">
+    <output-path>$PROJECT_DIR$/out/artifacts/spark_task_consultant_DefaultArtifact</output-path>
+    <root id="archive" name="default_artifact.jar">
+      <element id="module-output" name="spark-task-consultant" />
+    </root>
+  </artifact>
+</component>
