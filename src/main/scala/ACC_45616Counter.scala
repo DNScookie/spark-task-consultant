@@ -11,20 +11,18 @@ object ACC_45616Counter {
     val logs = sc.wholeTextFiles("Сессии\\*")
 
     val result = logs
-      .flatMap { case (filename, content) =>
+      .map { case (filename, content) =>
         var lines = content.split("\n")
         val searchResultIndices = lines.zipWithIndex
           .filter { case (line, _) => line.contains("CARD_SEARCH_END") }
           .map { case (_, index) => index + 1 }
         // результаты поиска
-        searchResultIndices.flatMap { i =>
-          val tokens = lines(i).split(" ")
-          // удаляем первый токен
-          tokens.drop(1)
-        }
+        searchResultIndices
+          .map { i => lines(i) }
+          .filter { line => line.contains("ACC_45616") }
+          .map { _ => 1 }.sum
       }
-      .filter(doc => doc == "ACC_45616")
-      .count()
+      .sum
     println(result)
 
     // выведем, сколько времени занял анализ
