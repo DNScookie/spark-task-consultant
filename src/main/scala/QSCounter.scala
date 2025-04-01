@@ -15,9 +15,7 @@ object QSCounter {
         val lines = content.split("\n")
         val searchResults = lines.zipWithIndex
           .filter { case (line, _) => line.startsWith("QS") }
-          .map { case (line, index) => (line.split(" ")(1), index + 1) }
-          .map { case (date, i) => (date, lines(i)) }
-          .map { case (date, line) => (date, line.split(" ")(0)) }
+          .map { case (line, index) => (line.split(" ")(1), lines(index + 1).split(" ")(0)) } // (date, searchId)
         lines
           .filter(_.startsWith("DOC_OPEN"))
           .flatMap { line =>
@@ -26,12 +24,12 @@ object QSCounter {
             }
           }
           .map { case (date, line) => (date, line.split(" "))}
+          // если дата не записалась из-за сбоя, берём дату запроса поиска
           .map { case (date, line) => ((if (line(1) == "") date else line(1), line(3)), 1) }
       }
       .reduceByKey(_ + _) // ((date, docId), count)
 
     val dateFormat = new java.text.SimpleDateFormat("dd.MM.yyyy")
-    // теперь нужно для каждой даты по возрастанию вывести количество открытий каждого документа
     val sortedResult = result
       .map { case ((date, docId), count) => (dateFormat.parse(date), (docId, count)) }
       .groupByKey()
@@ -44,7 +42,7 @@ object QSCounter {
 
     // для каждой даты выведем результаты
     sortedResult.foreach { case (date, docCounts) =>
-      val formattedDate = dateFormat.format(date, "dd.MM.yyyy")
+      val formattedDate = dateFormat.format(date)
       println(s"Дата: $formattedDate")
       docCounts.foreach { case (docId, count) =>
         println(s"  Документ: $docId, Количество открытий: $count")
