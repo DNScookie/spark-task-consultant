@@ -10,11 +10,19 @@ object ACC_45616Counter {
     val startTime = System.currentTimeMillis()
     val logs = sc.wholeTextFiles("Сессии\\*")
 
-    val result = logs.flatMap { case (_, content) =>
-      content.split("\n").sliding(2).collect {
-        case Array(prev, next) if prev.contains("CARD_SEARCH_END") && next.contains("ACC_45616") => 1
+    val result = logs
+      .map { case (filename, content) =>
+        var lines = content.split("\n")
+        val searchResultIndices = lines.zipWithIndex
+          .filter { case (line, _) => line.contains("CARD_SEARCH_END") }
+          .map { case (_, index) => index + 1 }
+        // результаты поиска
+        searchResultIndices
+          .map { i => lines(i) }
+          .filter { line => line.contains("ACC_45616") }
+          .map { _ => 1 }.sum
       }
-    }.sum()
+      .sum
     println(result)
 
     // выведем, сколько времени занял анализ
