@@ -10,28 +10,59 @@ object Anomalies {
     val startTime = System.currentTimeMillis()
     val logs = sc.wholeTextFiles("Сессии\\*")
 
-    // посчитаем количество символов { и } в каждом файле
-    val filesWithMismatchedBraces = logs
+    // выведем названия файлов, в которых невозможно распарсить дату на строчке с "DOC_OPEN"
+    val filesWithInvalidDate = logs
       .map { case (filename, content) =>
-        val counts = content.foldLeft((0, 0)) { (acc, char) =>
-          char match {
-            case '{' => (acc._1 + 1, acc._2)
-            case '}' => (acc._1, acc._2 + 1)
-            case _ => acc
-          }
+        val lines = content.split("\n")
+        val invalidLines = lines.filter(line => line.startsWith("DOC_OPEN") && !line.split(" ")(1).matches("\\d{2}\\.\\d{2}\\.\\d{4}_\\d{2}:\\d{2}:\\d{2}"))
+        if (invalidLines.nonEmpty) {
+          println(s"Файл: $filename, Неверные строки: ${invalidLines.mkString(", ")}")
+          Some(filename)
+        } else {
+          None
         }
-        println(s"Файл: $filename, Открывающиеся скобки: ${counts._1}, Закрывающиеся скобки: ${counts._2}")
-        (filename, counts)
       }
-      .filter { case (_, (openBraces, closeBraces)) => openBraces != closeBraces }
-      .map { case (filename, _) => filename }
+      .filter(_.isDefined)
+      .map(_.get)
       .collect()
 
-    // выведем имена файлов с несоответствием количества скобок
-    if (filesWithMismatchedBraces.isEmpty) {
-      println("Нет файлов с несоответствием количества скобок.")
-    } else {
-      filesWithMismatchedBraces.foreach(println)
+    println("Нажмите Enter, чтобы продолжить...")
+    scala.io.StdIn.readLine()
+
+    // выведем названия файлов, в которых невозможно распарсить дату на строчке с "QS"
+    val filesWithInvalidQSDate = logs
+      .map { case (filename, content) =>
+        val lines = content.split("\n")
+        val invalidLines = lines.filter(line => line.startsWith("QS") && !line.split(" ")(1).matches("\\d{2}\\.\\d{2}\\.\\d{4}_\\d{2}:\\d{2}:\\d{2}"))
+        if (invalidLines.nonEmpty) {
+          println(s"Файл: $filename, Неверные строки: ${invalidLines.mkString(", ")}")
+          Some(filename)
+        } else {
+          None
+        }
+      }
+      .filter(_.isDefined)
+      .map(_.get)
+      .collect()
+
+    println("Нажмите Enter, чтобы продолжить...")
+    scala.io.StdIn.readLine()
+
+    // найдём все строки с QUEST_197336 и выведем их с именами файлов
+    val questLines = logs
+      .flatMap { case (filename, content) =>
+        val lines = content.split("\n")
+        val questLines = lines.filter(line => line.contains("QUEST_197336"))
+        if (questLines.nonEmpty) {
+          questLines.map(line => (filename, line))
+        } else {
+          Array.empty[(String, String)]
+        }
+      }
+      .collect()
+
+    questLines.foreach { case (filename, line) =>
+      println(s"Файл: $filename, Строка: $line")
     }
 
     // выведем, сколько времени занял анализ
