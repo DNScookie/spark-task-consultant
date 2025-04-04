@@ -7,18 +7,14 @@ object ACC_45616Counter {
     sc.setLogLevel("ERROR")
 
     val startTime = System.currentTimeMillis()
-    val logs = sc.wholeTextFiles("Сессии\\*")
+    // загрузим все строки из файлов в директории "Сессии"
+    val logs = sc.textFile("Сессии/*")
 
+    // посчитаем все строки, начинающиеся с "$0" и содержащие "ACC_45616"
     val result = logs
-      .flatMap { case (filename, content) =>
-        val lines = content.split("\n")
-        lines.zipWithIndex
-          .filter { case (line, _) => line.startsWith("CARD_SEARCH_END") || line.startsWith("QS")}
-          .map { case (_, index) => lines(index + 1) }
-          .filter { line => line.contains("ACC_45616") }
-          .map { _ => 1 }
-      }
-      .sum
+      .filter(line => line.startsWith("$0") && line.contains("ACC_45616"))
+      .map(_ => 1)
+      .reduce(_ + _)
     println(result)
 
     println(s"Время выполнения: ${(System.currentTimeMillis() - startTime) / 1000.0} секунд")
