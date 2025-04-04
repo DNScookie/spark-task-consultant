@@ -9,16 +9,22 @@ object DollarZeroResearch {
     val startTime = System.currentTimeMillis()
     val logs = sc.wholeTextFiles("Сессии\\*")
 
-    // посчитаем, сколько строк начинается с "$0" и содержит "ACC_45616"
-    val result = logs
+    // выведем все документы, содержащие строки с "$0"
+    val dollarZeroLines = logs
       .flatMap { case (filename, content) =>
         val lines = content.split("\n")
-        lines.zipWithIndex
-          .filter { case (line, _) => line.startsWith("$0") && line.contains("ACC_45616") }
-          .map { _ => 1 }
+        val dollarZeroLines = lines.filter(line => line.contains("$0"))
+        if (dollarZeroLines.nonEmpty) {
+          dollarZeroLines.map(line => (filename, line))
+        } else {
+          Array.empty[(String, String)]
+        }
       }
-      .sum
-    println(result)
+      .collect()
+    // распечатаем результат
+    dollarZeroLines.foreach { case (filename, line) =>
+      println(s"Файл: $filename, Строка: $line")
+    }
 
     println(s"Время выполнения: ${(System.currentTimeMillis() - startTime) / 1000.0} секунд")
 
