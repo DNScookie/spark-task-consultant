@@ -13,23 +13,26 @@ object QSCounter {
     val result = logs
       .flatMap { case (filename, content) =>
         val lines = content.split("\n")
+        // найдём все строки с "QS" и запомним дату поиска и ID
         val searchResults = lines.zipWithIndex
           .filter { case (line, _) => line.startsWith("QS") }
           .map { case (line, index) => (line.split(" ")(1), lines(index + 1).split(" ")(0)) } // (date, searchId)
+        // составим пары с ключом (дата, ID документа) и значением 1
         lines
           .filter(_.startsWith("DOC_OPEN"))
           .flatMap { line =>
             searchResults.collect {
+              // связываем открытие документа с датой поиска
               case (date, searchId) if line.contains(searchId) => (date, line)
             }
           }
           .map { case (date, line) => (date, line.split(" "))}
-          // если дата не записалась из-за сбоя, берём дату запроса поиска
+          // если дата открытия не записалась из-за сбоя, берём дату поиска
           .map { case (date, line) => ((if (line(1) == "") date else line(1), line(3)), 1) }
       }
       .reduceByKey(_ + _) // ((date, docId), count)
 
-    val dateFormat = new java.text.SimpleDateFormat("dd.MM.yyyy")
+    val dateFormat = new java.text.SimpleDateFormat("dd.MM.yyyy") // формат даты менялся, однако диапазон сбоя это не затронуло
     val sortedResult = result
       .map { case ((date, docId), count) => (dateFormat.parse(date), (docId, count)) }
       .groupByKey()
